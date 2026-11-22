@@ -5,10 +5,15 @@ Compose program for the make.fun news-image-20261122 entry (account 1,
 @yutulboy). Draws a 1024x1024 front page (entry.png, next to this file)
 with Pillow only: flat layered shapes, a real-polygon world map, and a
 sourced card for every pictured story. Deterministic: no randomness,
-no clocks, no network. Facts were re-verified against the wires by
-the parent session on 22 Nov: the morning digest pool had misdated
-most of its items, so only wire-confirmed Sunday stories appear as
-cards; every older item is named in DATE CHECK with its true date.
+no clocks, no network. Facts were re-verified against the wires on
+22 Nov: the morning digest pool had misdated most of its items, so
+only wire-confirmed Sunday stories appear as cards; every older item
+is named in DATE CHECK with its true date.
+
+Revision note: the data sections below (cards, briefs, figures,
+timeline) were restructured by the reviser session into a single
+dict-based card table plus zipped parallel lists. Storage shape only -
+every fact, headline and number on the page is unchanged.
 """
 import os
 import sys
@@ -98,117 +103,149 @@ def centre(x0, x1, y, text, font, fill):
     d.text(((x0 + x1) / 2, y), text, font=font, fill=fill, anchor="ma")
 
 
-# ---------------------------------------------------------------- cards
-# (num, region, source tag, headline, deck, strip caption, strip chip)
-# FACT STATE (re-verified against the wires 22 Nov, pool v3): the morning
-# digest pool misdated most of its items. Every card and brief on this
-# page is a 22 Nov event with a wire timestamp; every older story is
-# named in DATE CHECK with its true date - never dressed fresh.
-LEADS = [
-    (1, "MIDEAST", "REUTERS",
-     "IRAN STRIKES US BASES ACROSS THE GULF",
-     "IRGC claims joint missile-and-drone strikes on 2 US Patriot radar "
-     "sites. A Bahrain industrial plant burns; drones at Kuwait's Ali Al "
-     "Salem are downed - the first since September.",
-     "BAHRAIN - KUWAIT - THE GULF", "2 RADARS HIT"),
-    (2, "GLOBAL", "REUTERS",
-     "COP31: FINAL TEXT TABLED IN ANTALYA",
-     "President Kurum tables the final package after Friday's suspended "
-     "close: objections shut at 03:00 GMT and the approval plenary sits "
-     "at 06:00 GMT Sunday.",
-     "ANTALYA - CLIMATE SUMMIT", "06:00 GMT VOTE"),
-    (3, "MIDEAST", "REUTERS",
-     "TANKERS HIT OFF OMAN AS CLASH WIDENS",
-     "Tankers are struck off Oman and Iran's Qeshm island sits inside "
-     "the clash zone, as the Gulf fighting jumps from bases to the sea "
-     "lanes the world's oil moves through.",
-     "OMAN - QESHM - THE STRAIT", "SEA LANES HIT"),
+# ----------------------------------------------------------------- data
+# FACT STATE (re-verified against the wires 22 Nov, pool v3): the
+# morning digest pool misdated most of its items. Every card and brief
+# on this page is a 22 Nov event with a wire timestamp; every older
+# story is named in DATE CHECK with its true date - never dressed fresh.
+#
+# Storage shape (reviser's layout): all ten pictured stories live in
+# ONE table, CARDS, built by the _card() helper as dicts with named
+# fields. The drawing code consumes plain tuples, so _tuples() adapts
+# the table: the first three rows become LEADS, the other seven MINIS.
+# Briefs are bare lines, numbered by enumerate from 11. The figures
+# strip and the timeline are zipped from parallel lists. Facts are
+# identical to the previous build; only how they are kept has changed.
+
+def _card(n, region, tag, head, deck, caption, chip):
+    return {"n": n, "region": region, "tag": tag, "head": head,
+            "deck": deck, "caption": caption, "chip": chip}
+
+
+CARDS = [
+    _card(1, "MIDEAST", "REUTERS",
+          "IRAN STRIKES US BASES ACROSS THE GULF",
+          "IRGC claims joint missile-and-drone strikes on 2 US Patriot "
+          "radar sites. A Bahrain industrial plant burns; drones at "
+          "Kuwait's Ali Al Salem are downed - the first since September.",
+          "BAHRAIN - KUWAIT - THE GULF", "2 RADARS HIT"),
+    _card(2, "GLOBAL", "REUTERS",
+          "COP31: FINAL TEXT TABLED IN ANTALYA",
+          "President Kurum tables the final package after Friday's "
+          "suspended close: objections shut at 03:00 GMT and the "
+          "approval plenary sits at 06:00 GMT Sunday.",
+          "ANTALYA - CLIMATE SUMMIT", "06:00 GMT VOTE"),
+    _card(3, "MIDEAST", "REUTERS",
+          "TANKERS HIT OFF OMAN AS CLASH WIDENS",
+          "Tankers are struck off Oman and Iran's Qeshm island sits "
+          "inside the clash zone, as the Gulf fighting jumps from bases "
+          "to the sea lanes the world's oil moves through.",
+          "OMAN - QESHM - THE STRAIT", "SEA LANES HIT"),
+    _card(4, "ASIA", "NCS",
+          "M4.1 QUAKE WAKES MYANMAR",
+          "The NCS logs a magnitude-4.1 quake at 02:35 IST, 95 km down "
+          "at 24.4N, 94.6E by the India border. No damage reported.",
+          "MYANMAR - NCS LOG", "M4.1 - 95 KM"),
+    _card(5, "AMERICAS", "F1",
+          "LAS VEGAS GP: LIGHTS OUT 04:00 GMT",
+          "The Strip night race starts 20:00 Saturday Vegas time - "
+          "04:00 UTC Sunday - as round 22 of the title fight runs "
+          "under the lights.",
+          "LAS VEGAS - STRIP CIRCUIT", "ROUND 22"),
+    _card(6, "SPORT", "WIRES",
+          "TURIN FINAL: ALCARAZ v ZVEREV",
+          "The ATP Finals end today in Turin: Alcaraz, who fought back "
+          "past Shelton, meets Zverev for the season's last big title.",
+          "TURIN - ATP FINALS", "TITLE TODAY"),
+    _card(7, "MIDEAST", "ANADOLU",
+          "HOOTHI MISSILE DOWNED OVER MECCA REGION",
+          "Saudi civil defence sounds the Mecca alert at 23:43 local; "
+          "the coalition confirms the interception at 01:42 Sunday.",
+          "MECCA REGION - SAUDI ARABIA", "01:42 SUNDAY"),
+    _card(8, "EUROPE", "PREMIER LEAGUE",
+          "ANFIELD SUNDAY: LIVERPOOL v UNITED",
+          "Matchweek 11 closes at Anfield, 16:30 GMT Sunday, after "
+          "Hull host Brighton in the early game.",
+          "ANFIELD - LIVERPOOL", "16:30 GMT"),
+    _card(9, "ASIA", "AFP",
+          "INDIA'S 720: A WELLINGTON RECORD",
+          "India declare on 720/9 - the highest Test total ever made "
+          "in New Zealand - on Rahul's 136 and Pant's 128, day four "
+          "at the Basin.",
+          "WELLINGTON - BASIN RESERVE", "720/9 DECLARED"),
+    _card(10, "AMERICAS", "SPACEX",
+          "FALCON 9 LIFTS SPY SATELLITES",
+          "NROL-136 rides a Falcon 9 out of Vandenberg in Sunday's "
+          "12:16 UTC window - the NRO constellation's 15th batch.",
+          "VANDENBERG - CALIFORNIA", "12:16 UTC"),
 ]
 
-MINIS = [
-    (4, "ASIA", "NCS",
-     "M4.1 QUAKE WAKES MYANMAR",
-     "The NCS logs a magnitude-4.1 quake at 02:35 IST, 95 km down at "
-     "24.4N, 94.6E by the India border. No damage reported.",
-     "MYANMAR - NCS LOG", "M4.1 - 95 KM"),
-    (5, "AMERICAS", "F1",
-     "LAS VEGAS GP: LIGHTS OUT 04:00 GMT",
-     "The Strip night race starts 20:00 Saturday Vegas time - 04:00 UTC "
-     "Sunday - as round 22 of the title fight runs under the lights.",
-     "LAS VEGAS - STRIP CIRCUIT", "ROUND 22"),
-    (6, "SPORT", "WIRES",
-     "TURIN FINAL: ALCARAZ v ZVEREV",
-     "The ATP Finals end today in Turin: Alcaraz, who fought back past "
-     "Shelton, meets Zverev for the season's last big title.",
-     "TURIN - ATP FINALS", "TITLE TODAY"),
-    (7, "MIDEAST", "ANADOLU",
-     "HOOTHI MISSILE DOWNED OVER MECCA REGION",
-     "Saudi civil defence sounds the Mecca alert at 23:43 local; the "
-     "coalition confirms the interception at 01:42 Sunday.",
-     "MECCA REGION - SAUDI ARABIA", "01:42 SUNDAY"),
-    (8, "EUROPE", "PREMIER LEAGUE",
-     "ANFIELD SUNDAY: LIVERPOOL v UNITED",
-     "Matchweek 11 closes at Anfield, 16:30 GMT Sunday, after Hull host "
-     "Brighton in the early game.",
-     "ANFIELD - LIVERPOOL", "16:30 GMT"),
-    (9, "ASIA", "AFP",
-     "INDIA'S 720: A WELLINGTON RECORD",
-     "India declare on 720/9 - the highest Test total ever made in New "
-     "Zealand - on Rahul's 136 and Pant's 128, day four at the Basin.",
-     "WELLINGTON - BASIN RESERVE", "720/9 DECLARED"),
-    (10, "AMERICAS", "SPACEX",
-     "FALCON 9 LIFTS SPY SATELLITES",
-     "NROL-136 rides a Falcon 9 out of Vandenberg in Sunday's 12:16 UTC "
-     "window - the NRO constellation's 15th batch.",
-     "VANDENBERG - CALIFORNIA", "12:16 UTC"),
-]
 
-# ALSO ON briefs, numbered on from the cards (11..36) - one line each.
-BRIEFS = [
-    (11, "ANTALYA - final text haggled line by line"),
-    (12, "BAHRAIN - smoke rises over the industrial zone"),
-    (13, "KUWAIT - first drone interception since September"),
-    (14, "QESHM - island bases inside the clash zone"),
-    (15, "TEHRAN - IRGC claims the joint operation"),
-    (16, "MECCA - civil defence alert sounds at 23:43 local"),
-    (17, "TURIN - Alcaraz fights back past Shelton to the final"),
-    (18, "WELLINGTON - Nicholls' 175 anchors New Zealand's 368"),
-    (19, "NAPLES - Kim leads Thitikul by one into Sunday"),
-    (20, "FUKUOKA - Onosato, Wakamotoharu tied at 12-2"),
-    (21, "SEA ISLAND - washout pushes RSM round 3 to Sunday"),
-    (22, "VANDENBERG - booster B1097 returns to Landing Zone 4"),
-    (23, "MANAMA - Bahrain demands the Security Council act"),
-    (24, "WELLINGTON - Bumrah takes 4-92 in the first innings"),
-    (25, "NAYPYIDAW - quake logged 95 km deep, no damage"),
-    (26, "LAS VEGAS - 50 laps under the Strip lights"),
-    (27, "KANSAS CITY - Chiefs host Cardinals in the NFL slate"),
-    (28, "HORMUZ - tankers struck near the strait (UKMTO)"),
-    (29, "FUKUOKA - Atamifuji one win back at 11-3"),
-    (30, "NAPLES - $4 million awaits Sunday's LPGA winner"),
-    (31, "DETROIT - Lions host Buccaneers in the early window"),
-    (32, "TURIN - the season's last title decided tonight"),
-    (33, "SEA ISLAND - three tied at 9 under into Sunday"),
-    (34, "WELLINGTON - six Indian batters pass fifty"),
-    (35, "BUFFALO - Bills host Dolphins in Sunday's slate"),
-    (36, "HULL - Brighton visit the MKM in the early game"),
-]
+def _tuples(rows):
+    """Adapt card dicts to the tuple shape the drawing code consumes."""
+    return [(c["n"], c["region"], c["tag"], c["head"], c["deck"],
+             c["caption"], c["chip"]) for c in rows]
 
-NUMBERS = [
-    ("2", "PATRIOT RADARS - CARD 1"),
-    ("06:00", "GMT COP31 VOTE - CARD 2"),
-    ("M4.1", "MYANMAR QUAKE - CARD 4"),
-    ("720/9", "INDIA'S RECORD - CARD 9"),
-    ("12:16", "UTC FALCON 9 - CARD 10"),
-    ("16:30", "GMT AT ANFIELD - CARD 8"),
-]
 
-TIMELINE = [
-    ("OVERNIGHT", "Iran strikes Gulf bases"),
-    ("05:42 WIB", "Mecca interception confirmed"),
-    ("06:00 GMT", "COP31 approval vote, Antalya"),
-    ("11:00 WIB", "Las Vegas GP lights out"),
-    ("EVENING", "Alcaraz v Zverev, Turin"),
+LEADS = _tuples(CARDS[:3])
+MINIS = _tuples(CARDS[3:])
+
+# ALSO ON briefs: bare lines here, numbered on from the cards (11..36)
+# by the enumerate below - one line each, all from Sunday.
+BRIEF_LINES = [
+    "ANTALYA - final text haggled line by line",
+    "BAHRAIN - smoke rises over the industrial zone",
+    "KUWAIT - first drone interception since September",
+    "QESHM - island bases inside the clash zone",
+    "TEHRAN - IRGC claims the joint operation",
+    "MECCA - civil defence alert sounds at 23:43 local",
+    "TURIN - Alcaraz fights back past Shelton to the final",
+    "WELLINGTON - Nicholls' 175 anchors New Zealand's 368",
+    "NAPLES - Kim leads Thitikul by one into Sunday",
+    "FUKUOKA - Onosato, Wakamotoharu tied at 12-2",
+    "SEA ISLAND - washout pushes RSM round 3 to Sunday",
+    "VANDENBERG - booster B1097 returns to Landing Zone 4",
+    "MANAMA - Bahrain demands the Security Council act",
+    "WELLINGTON - Bumrah takes 4-92 in the first innings",
+    "NAYPYIDAW - quake logged 95 km deep, no damage",
+    "LAS VEGAS - 50 laps under the Strip lights",
+    "KANSAS CITY - Chiefs host Cardinals in the NFL slate",
+    "HORMUZ - tankers struck near the strait (UKMTO)",
+    "FUKUOKA - Atamifuji one win back at 11-3",
+    "NAPLES - $4 million awaits Sunday's LPGA winner",
+    "DETROIT - Lions host Buccaneers in the early window",
+    "TURIN - the season's last title decided tonight",
+    "SEA ISLAND - three tied at 9 under into Sunday",
+    "WELLINGTON - six Indian batters pass fifty",
+    "BUFFALO - Bills host Dolphins in Sunday's slate",
+    "HULL - Brighton visit the MKM in the early game",
 ]
+BRIEFS = [(11 + i, line) for i, line in enumerate(BRIEF_LINES)]
+
+# Figures strip: values and their card-bound labels, kept as two
+# parallel lists and zipped - every figure names the card it is from.
+FIGURE_VALUES = ["2", "06:00", "M4.1", "720/9", "12:16", "16:30"]
+FIGURE_LABELS = [
+    "PATRIOT RADARS - CARD 1",
+    "GMT COP31 VOTE - CARD 2",
+    "MYANMAR QUAKE - CARD 4",
+    "INDIA'S RECORD - CARD 9",
+    "UTC FALCON 9 - CARD 10",
+    "GMT AT ANFIELD - CARD 8",
+]
+NUMBERS = list(zip(FIGURE_VALUES, FIGURE_LABELS))
+
+# UTC timeline: slot labels and what happens in them, zipped pairwise.
+SLOT_LABELS = ["OVERNIGHT", "05:42 WIB", "06:00 GMT", "11:00 WIB",
+               "EVENING"]
+SLOT_EVENTS = [
+    "Iran strikes Gulf bases",
+    "Mecca interception confirmed",
+    "COP31 approval vote, Antalya",
+    "Las Vegas GP lights out",
+    "Alcaraz v Zverev, Turin",
+]
+TIMELINE = list(zip(SLOT_LABELS, SLOT_EVENTS))
 
 DATE_CHECK = [
     "PERU QUAKE M6.9 - 20/21 NOV",
