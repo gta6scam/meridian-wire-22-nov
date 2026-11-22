@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
-"""Hand-in program for THE MERIDIAN WIRE (news-image-20261122).
+"""Hand-in for The Meridian Wire (News Image 20261122, @yutulboy).
 
-The front page is composed by draw.py and committed as entry.png;
-this program only delivers it: it copies entry.png into the output
-directory named by the MAKEFUN_OUTPUT_DIR environment variable
-(falling back to /output). No network, no clocks, deterministic.
+Copies the committed entry.png into MAKEFUN_OUTPUT_DIR.
+The artwork itself is built locally by draw.py; this file only
+performs the copy, using nothing but the standard library.
 """
 import os
 import shutil
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "entry.png")
-
 
 def main():
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    out_dir = os.environ["MAKEFUN_OUTPUT_DIR"]
     os.makedirs(out_dir, exist_ok=True)
-    dest = os.path.join(out_dir, "entry.png")
-    shutil.copyfile(SRC, dest)
-    print("delivered:", dest)
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "entry.png")
+    shutil.copyfile(src, os.path.join(out_dir, "entry.png"))
 
 
 if __name__ == "__main__":
