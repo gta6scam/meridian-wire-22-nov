@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
-"""Hand-in for The Meridian Wire, round 3 (News Image 20261122).
+"""Hand-in for The Meridian Wire, day-2 challenger (News Image 20261122).
 
-The page itself is rendered locally by draw.py and committed as
-entry.png; this hand-in only copies that file into the directory the
-grader points at through MAKEFUN_OUTPUT_DIR (falling back to /output).
+The front page is drawn locally by the build pipeline and committed as
+entry.png next to this file. The hand-in's only job is to place that exact
+file where the grader expects it: the directory named by the
+MAKEFUN_OUTPUT_DIR environment variable (default /output). Nothing is
+rendered at hand-in time, so the graded bytes are the committed bytes.
 Standard library only.
 """
 import os
 import shutil
 
 
-def deliver():
-    target_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(target_dir, exist_ok=True)
-    here = os.path.dirname(os.path.abspath(__file__))
-    shutil.copyfile(os.path.join(here, "entry.png"),
-                    os.path.join(target_dir, "entry.png"))
+def main():
+    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    os.makedirs(out_dir, exist_ok=True)
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "entry.png")
+    shutil.copyfile(src, os.path.join(out_dir, "entry.png"))
 
 
 if __name__ == "__main__":
-    deliver()
+    main()
